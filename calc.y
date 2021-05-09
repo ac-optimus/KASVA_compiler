@@ -40,7 +40,7 @@ void addNewStmtAtTheEnd(struct StmtsNode *oldStmts, struct StmtNode* newStmt);
         struct StmtsNode *stmtsptr;
 
 }
-
+// tokents and there type declaration
 %token WHILE IF ELSE FOR DEF RETURN
 %token  <val> NUM        /* Integer   */
 %token <tptr> VAR SCAN PRINT
@@ -72,13 +72,16 @@ prog:  stmts   {final=$1;}
 ;
 
 stmts: stmt {
+                // single statement
                 $$=(struct StmtsNode*)malloc(sizeof(struct StmtsNode));
                 $$->singl=1;
                 $$->left=$1;
                 $$->right=NULL;
             }
         |stmt stmts
-                {$$=(struct StmtsNode*)malloc(sizeof(struct StmtsNode));
+                {
+                // multiple comments
+                $$=(struct StmtsNode*)malloc(sizeof(struct StmtsNode));
                 $$->singl=0;
                 $$->left = $1;
                 $$->right = $2;
@@ -102,6 +105,7 @@ stmt: '\n'  {$$ = NULL;/*$$ our head is a pointer, setting it ot null here.*/}
 
 inputStmt: VAR ASSIGN SCAN '(' ')' ';'
                 {
+                // input
                 $$=(struct StmtNode*)malloc(sizeof(struct StmtNode));
                 $$->stmntType=0;
         	$$=(struct StmtNode*) malloc(sizeof(struct StmtNode));
@@ -112,6 +116,7 @@ inputStmt: VAR ASSIGN SCAN '(' ')' ';'
 
 printStmt: PRINT '('  exp  ')' ';'
                 {
+                // output
                 $$=(struct StmtNode*)malloc(sizeof(struct StmtNode));
                 $$->stmntType=5;
                 sprintf($$->assignCode, "%s", $3);
@@ -120,6 +125,7 @@ printStmt: PRINT '('  exp  ')' ';'
 
 forStmt: FOR '('  assignStmt ';' VAR LT_OP VAR  ';' assignStmt ')' '{' stmts '}'
                 {
+                // for loop
                 //  printf("I saw a for loop.\n");
                  $$=(struct StmtNode*) malloc(sizeof(struct StmtNode));
                  $$->stmntType = 3;
@@ -135,6 +141,7 @@ forStmt: FOR '('  assignStmt ';' VAR LT_OP VAR  ';' assignStmt ')' '{' stmts '}'
 
 assignStmt:  VAR ASSIGN exp
                 {
+                // assignment
                 // printf("assignment\n");
                  $$=(struct StmtNode*)malloc(sizeof(struct StmtNode));
                  $$->stmntType=0;
@@ -145,6 +152,7 @@ assignStmt:  VAR ASSIGN exp
 
 whileStmt:  WHILE '(' relation_operator ')' '{' stmts '}'
                 {
+                 // while loop
                  $$=(struct StmtNode*) malloc(sizeof(struct StmtNode));
                  $$->stmntType = 1;
                  sprintf($$->initCode, "%s", $3->initCode);
@@ -156,6 +164,7 @@ whileStmt:  WHILE '(' relation_operator ')' '{' stmts '}'
 
 ifElseStmt:  IF '('relation_operator ')' '{' stmts '}' '\n' ELSE '{' stmts '}'
                 {
+                // if else
                         /* printf("if else found\n"); */
                  $$=(struct StmtNode*) malloc(sizeof(struct StmtNode));
                  $$->stmntType = 2;
@@ -168,6 +177,7 @@ ifElseStmt:  IF '('relation_operator ')' '{' stmts '}' '\n' ELSE '{' stmts '}'
 ;
 
 funcStmt: DEF VAR '(' parameters  ')' '{'  stmts '}'{
+                // function defination
         	 /* printf("function found \n"); */
                  $$=(struct StmtNode*) malloc(sizeof(struct StmtNode));
                  $$->stmntType = 4;
@@ -185,6 +195,7 @@ funcStmt: DEF VAR '(' parameters  ')' '{'  stmts '}'{
 ;
 
 funCall : VAR '(' parameters  ')'{
+        // function call
 	/* printf ("funCall found \n"); */
 	//printf("%d\n",$1->type);
 	$$=(struct StmtNode*) malloc(sizeof(struct StmtNode));
@@ -195,6 +206,7 @@ funCall : VAR '(' parameters  ')'{
 
 
 funcAssign : VAR ASSIGN VAR '(' parameters  ')'{
+        // function assignment
 	/* printf ("funAssign found \n"); */
 	$$=(struct StmtNode*) malloc(sizeof(struct StmtNode));
 	sprintf($$->assignCode, "jal %s \nmove $t%d, $v1 \nsw $t%d %s($t8) \n",$3->name,count, count, $1->addr);
@@ -208,6 +220,7 @@ parameters: VAR ',' parameters
 ;
 
 returnStmt: RETURN VAR ';' {
+        // return statement for function
      	$$=(struct StmtNode*) malloc(sizeof(struct StmtNode));
 	sprintf($$->assignCode,"lw $v1, %s($t8)\n", $2->addr);
         }
