@@ -34,7 +34,7 @@
 - SCAN
 - PRINT
 
-# Grammer:
+# Grammar:
 
 - **prog**:                   declBlock stmts | stmts
 - **declBlock**:              STARTDECL '\n' decls  ENDDECL '\n'
