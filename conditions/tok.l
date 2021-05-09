@@ -10,16 +10,19 @@ symrec *sym_table = (symrec *)0;
 %}
 number [0-9]+
 id [a-z]+([a-z]|[0-9])*
-comment "\/*"[^\n]*"*\/"
+
 %%
 [ ] {}
-{comment} {printf("comment found\n");}
 "for" {return FOR;}
 "while" {return WHILE;/*NOTHING TO ASSIGN*/}
 "if" {return IF;}
 "else" {return ELSE;}
 "def" {return DEF;}
 "return" {return RETURN;}
+"startdecl" {printf("%s\n", yytext); return STARTDECL;}
+"decl" {printf("%s\n", yytext); return DECL;}
+"enddecl" {printf("%s\n", yytext); return ENDDECL;}
+
 "==" {return EQ;}
 "=" {return ASSIGN;}
 "<" {return LT_OP;}
@@ -31,8 +34,8 @@ comment "\/*"[^\n]*"*\/"
 
 {number} {sscanf(yytext,"%d",&yylval.val);return NUM;}
 
-"printf"  {symrec *s;s=getsym(yytext); if(s==0) s=putsym(yytext,PRINT);yylval.tptr=s;return PRINT;}
-"scanf"  {symrec *s;s=getsym(yytext); if(s==0) s=putsym(yytext,SCAN);yylval.tptr=s; return SCAN;}
+"printf"  {return PRINT;}
+"scanf"  {return SCAN;}
 
 {id} {symrec *s;s=getsym(yytext); if(s==0) s=putsym(yytext,VAR);yylval.tptr=s;return VAR;}
 \n|.  {return yytext[0];}
@@ -47,11 +50,9 @@ symrec * putsym (char *sym_name,int sym_type){
   ptr->name = (char *) malloc (strlen (sym_name) + 1);
   strcpy (ptr->name,sym_name);
   sprintf(ptr->addr,"%d",Adr); /* set value to 0 even if fctn.  */
-  if ((strcmp(sym_name,"scanf") != 0) && (strcmp(sym_name,"printf") != 0))
-          Adr=Adr+4;
+  Adr=Adr+4;
   ptr->next = (struct symrec *)sym_table;
   sym_table = ptr;
-  ptr->type =0;
   return ptr;
 }
 

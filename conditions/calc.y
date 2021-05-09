@@ -198,23 +198,18 @@ returnStmt: RETURN x ';' {
         }
 ;
 
-arrayStmt:  VAR '[' x ']' '=' VAR '[' x ']' ';'{;}
-          | VAR '[' x ']' '=' x ';'{
-
-             $$=(struct StmtNode*)malloc(sizeof(struct StmtNode));
+arrayStmt:  VAR '[' x ']' ASSIGN exp {
+                printf("assignment found\n");
+               $$=(struct StmtNode*)malloc(sizeof(struct StmtNode));
                 //  $$->stmntType=0;
-                $$->isWhile=0;
-                char dst_reg=$3[5];
-                char src_reg=$6[5];
-                printf("%c-------------%c\n", src_reg, dst_reg);
+                char dummy[3];
+                for (int i=0; i<3; i++)
+                  dummy[i]=$3[3+i];
 
-                sprintf($$->bodyCode, "%s\nsw t%c, %s($t%c)",
-                              $6, src_reg, $1->name, dst_reg);
-                // printf("%s\nsw t%c, %s($t%c)",
-                //               $6, src_reg, $1->name, dst_reg);
-                $$->down=NULL
-
-            ;}
+                 sprintf($$->assignCode, "%s\nsw $t0, %s(%s)\n",
+                        $6, $1->name, dummy);
+            }
+;
 
 relation_operator: VAR EQ VAR
                         { //==

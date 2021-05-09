@@ -19,6 +19,7 @@ int ifStart=0;
 int conditionNextJump=0;
 
 int count=0; /* This can take value 0 and 1. */
+int funccount =0;
 int labelCount=0; // where we have used this?
 FILE *fp;
 struct StmtsNode* final; // is this our abstract tree?
@@ -26,9 +27,8 @@ void StmtsTrav(struct StmtsNode* ptr);
 void StmtTrav(struct StmtNode* ptr);
 void addNewStmtAtTheEnd(struct StmtsNode *oldStmts, struct StmtNode* newStmt);
 
-char array_name[1000][1000];
-int counter_array=0;
-int size_array[1000];
+
+
 
 %}
 %union {
@@ -38,12 +38,13 @@ int size_array[1000];
         char nData[100];
         struct StmtNode *stmtptr;
         struct StmtsNode *stmtsptr;
+
 }
 
-%token WHILE IF ELSE FOR DEF RETURN  DECL STARTDECL ENDDECL
+%token WHILE IF ELSE FOR DEF RETURN
 %token  <val> NUM        /* Integer   */
-%token <tptr> VAR
-%token <nData> SCAN PRINT
+%token <tptr> VAR SCAN PRINT
+// %token <nData> SCAN PRINT
 %type  <c>  exp
 %type <nData> x
 %type <stmtptr> stmt
@@ -55,10 +56,10 @@ int size_array[1000];
 %type <stmtsptr> stmts
 %type <stmtptr>funcStmt
 %type <stmtptr>returnStmt
-%type<stmtptr> inputStmt
+%type <stmtptr>funcAssign
+%type <stmtptr>funCall
 %type <stmtptr> printStmt
-%type <stmtptr> arrayStmt
-
+%type <stmtptr> inputStmt
 
 %right ASSIGN
 %left EQ LE_OP GE_OP GT_OP LT_OP
@@ -67,23 +68,7 @@ int size_array[1000];
 
 /* Grammar follows */
 %%
-
-prog: declBlock stmts  {;}
-     | stmts {final=$1;}
-;
-
-declBlock: STARTDECL '\n' decls  ENDDECL '\n'{printf("declaration block found\n");}
-;
-
-decls: decl     {}
-| decl decls
-;
-
-decl: DECL VAR '[' NUM ']' ';' '\n'{  printf("declaration found\n");
-                  strncpy(array_name[counter_array], $2->name, sizeof($2->name));
-                                  size_array[counter_array]=$4;
-                                  counter_array+=1;
-  /*need to store the size in the symbol table somehow.;*/}
+prog:  stmts   {final=$1;}
 ;
 
 stmts: stmt {
@@ -109,51 +94,52 @@ stmt: '\n'  {$$ = NULL;/*$$ our head is a pointer, setting it ot null here.*/}
       | forStmt {$$=$1;}
       | inputStmt {$$=$1;}
       | printStmt {$$=$1;}
-      | arrayStmt {$$=$1;}
+      | funCall ';' {$$=$1;}
+      | funcAssign ';' {$$=$1;}
       | error '\n' { yyerrok;}
 
 ;
 
 inputStmt: VAR ASSIGN SCAN '(' ')' ';'
-        {
-        $$=(struct StmtNode*)malloc(sizeof(struct StmtNode));
-        $$->stmntType=6;
-        if (strcmp($3,"scanf") == 0) {
-            sprintf($$->assignCode,"sw $t0, %s($t8)\n", $1->addr);
-           }
+                {
+                $$=(struct StmtNode*)malloc(sizeof(struct StmtNode));
+                $$->stmntType=0;
+        	$$=(struct StmtNode*) malloc(sizeof(struct StmtNode));
+	        sprintf($$->assignCode, "li $v0, 5\nsyscall\n move $t%d, $v0\nsw $t%d %s($t8) \n",
+                                                count, count, $1->addr);
         }
 ;
 
 printStmt: PRINT '('  exp  ')' ';'
-        {
-        $$=(struct StmtNode*)malloc(sizeof(struct StmtNode));
-        $$->stmntType=5;
-        if (strcmp($1,"printf") == 0) {
-           sprintf($$->assignCode,"%s", $3);
-          }
-        }
+                {
+                $$=(struct StmtNode*)malloc(sizeof(struct StmtNode));
+                $$->stmntType=5;
+                sprintf($$->assignCode, "%s", $3);
+                }
 ;
 
-forStmt: FOR '('  assignStmt ';'relation_operator  ';' assignStmt ')' '{' stmts '}'
+forStmt: FOR '('  assignStmt ';' VAR LT_OP VAR  ';' assignStmt ')' '{' stmts '}'
                 {
                 //  printf("I saw a for loop.\n");
                  $$=(struct StmtNode*) malloc(sizeof(struct StmtNode));
                  $$->stmntType = 3;
                  $$->initCode_for_variable = $3;
-                 sprintf($$->initCode, "%s", $3->initCode);
-                 sprintf($$->elseJumpCode, "%s", $3->elseJumpCode);
-
-                 addNewStmtAtTheEnd($10, $7);
-                 $$->conditionCode = $10;
+                 sprintf($$->initCode, "lw $t0, %s($t8)\nlw $t1, %s($t8)\n",
+                         $5->addr, $7->addr);
+                 sprintf($$->elseJumpCode, "bge $t0, $t1, ");
+                // add assignment statement at the end of all the statements that already exists.
+                 addNewStmtAtTheEnd($12, $9);
+                 $$->conditionCode = $12;
                 }
+;
 
 assignStmt:  VAR ASSIGN exp
                 {
                 // printf("assignment\n");
                  $$=(struct StmtNode*)malloc(sizeof(struct StmtNode));
                  $$->stmntType=0;
-                 sprintf($$->assignCode, "%s\nsw $t0, %s($t8)\n",
-                         $3, $1->addr);
+                 //sprintf($$->assignCode, "%s\nsw $t%d, %s($t8)\n", $3,count, $1->addr);
+                 sprintf($$->assignCode, "%s\nsw $t0, %s($t8)\n", $3, $1->addr);
                 }
 ;
 
@@ -170,6 +156,7 @@ whileStmt:  WHILE '(' relation_operator ')' '{' stmts '}'
 
 ifElseStmt:  IF '('relation_operator ')' '{' stmts '}' '\n' ELSE '{' stmts '}'
                 {
+                        /* printf("if else found\n"); */
                  $$=(struct StmtNode*) malloc(sizeof(struct StmtNode));
                  $$->stmntType = 2;
                  sprintf($$->initCode, "%s", $3->initCode);
@@ -181,40 +168,51 @@ ifElseStmt:  IF '('relation_operator ')' '{' stmts '}' '\n' ELSE '{' stmts '}'
 ;
 
 funcStmt: DEF VAR '(' parameters  ')' '{'  stmts '}'{
-        // printf("function found \n");
+        	 /* printf("function found \n"); */
                  $$=(struct StmtNode*) malloc(sizeof(struct StmtNode));
                  $$->stmntType = 4;
-                 sprintf($$->initCode, "%s", $2->name);
+                 $2->type = 1;
+                 funccount =funccount +1;
+                 if( funccount == 1){
+
+         		sprintf($$->initCode, "li $v0,10 \nsyscall\n\n\n%s", $2->name);
+                 }
+                 else{
+                 	sprintf($$->initCode, "%s", $2->name);
+                 }
                  $$->conditionCode = $7;
         }
+;
+
+funCall : VAR '(' parameters  ')'{
+	/* printf ("funCall found \n"); */
+	//printf("%d\n",$1->type);
+	$$=(struct StmtNode*) malloc(sizeof(struct StmtNode));
+	sprintf($$->assignCode,"jal %s \n", $1->name);
+
+	}
+;
+
+
+funcAssign : VAR ASSIGN VAR '(' parameters  ')'{
+	/* printf ("funAssign found \n"); */
+	$$=(struct StmtNode*) malloc(sizeof(struct StmtNode));
+	sprintf($$->assignCode, "jal %s \nmove $t%d, $v1 \nsw $t%d %s($t8) \n",$3->name,count, count, $1->addr);
+	//count=(count+1)%2;
+
+   	}
 ;
 
 parameters: VAR ',' parameters
          | VAR
 ;
 
-returnStmt: RETURN x ';' {
-        // printf ("return found");
+returnStmt: RETURN VAR ';' {
+     	$$=(struct StmtNode*) malloc(sizeof(struct StmtNode));
+	sprintf($$->assignCode,"lw $v1, %s($t8)\n", $2->addr);
         }
 ;
 
-arrayStmt:  VAR '[' x ']' '=' VAR '[' x ']' ';'{;}
-          | VAR '[' x ']' '=' x ';'{
-
-             $$=(struct StmtNode*)malloc(sizeof(struct StmtNode));
-                //  $$->stmntType=0;
-                $$->isWhile=0;
-                char dst_reg=$3[5];
-                char src_reg=$6[5];
-                printf("%c-------------%c\n", src_reg, dst_reg);
-
-                sprintf($$->bodyCode, "%s\nsw t%c, %s($t%c)",
-                              $6, src_reg, $1->name, dst_reg);
-                // printf("%s\nsw t%c, %s($t%c)",
-                //               $6, src_reg, $1->name, dst_reg);
-                $$->down=NULL
-
-            ;}
 
 relation_operator: VAR EQ VAR
                         { //==
@@ -355,38 +353,28 @@ void StmtTrav(struct StmtNode* ptr){
         else if (ptr->stmntType == 5){
         		fprintf(fp,"%s\n",ptr->assignCode);
         		fprintf(fp, "li $v0, 1\nmove $a0, $t0\nsyscall\n");
+                        /* fprintf(fp, "li $v0, 4\nla $a0, newline\nsyscall\n"); */
         }
-        else if (ptr->stmntType == 6){
-        		fprintf(fp, "li $v0, 5\nsyscall\n");
-        		fprintf(fp, "$v0\n%s\n", ptr->assignCode);
-        }
+        // else if (ptr->stmntType == 6){
+        // 		fprintf(fp, "li $v0, 5\nsyscall\n");
+        // 		fprintf(fp, "$v0\n%s\n", ptr->assignCode);
+        // }
 }
 
 int main ()
 {
    fp=fopen("asmb.asm","w");
-
-
-   fprintf(fp,".data\n");
+   fprintf(fp,".data\n\n.text\nli $t8,268500992\n");
    yyparse ();
-
-   if (counter_array != 0){
-     // array declaration
-      for (int i=0; i<counter_array; i++){
-        fprintf(fp, "%s: .space %d\n", array_name[i], size_array[i]);
-      }
-   }
-
-  fprintf(fp, "\n.text\nli $t8,268500992\n");
-
-
    // Traverse the tree here
    StmtsTrav(final);
    // printing the final output.
    // check if function is not null
    // if not null then
 //    fprintf(fp, "%s\n", functions);
-   fprintf(fp,"\nli $v0,10\nsyscall\n");
+   if( funccount == 0){
+        fprintf(fp,"\nli $v0,10\nsyscall\n");
+        }
    fclose(fp);
 }
 

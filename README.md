@@ -1,17 +1,18 @@
-# KASVA Compiler
+# A Simple Compiler
 
 In this project, we write a compiler having features and syntax as mentioned below. We use Flex for generating lexical analyser and, Bison for generating parser for the language. We use MARS simulator for assembly output on MIPS architecture.
 
 ## How to build?
-1. Open terminal in root folder in the reporsitory.
-2. Run `$make`
-3. Some test files are available in the folder `conditions`. To test on `filename.ksva`, run `$./KASVA < conditions/filname.kasva`
-4. Open `asmb.asm` file in Mars. Assemble and Run.
+1. Open terminal in conditions folder in the reporsitory.
+2. Run the command - $flex tok.l
+3. Run the command - $bison -d calc.y
+4. Run the command - $gcc calc.tab.c lex.yy.c -lfl
+5. Open asmb.asm file in Mars. Assemble and Run.
 
 ## Features included
 1. Data Type Supported - Int
 2. Integer assignment and access
-3. Array assignment, access (In progress)
+3. Array assignment, access
 4. If-else
 5. Conditionals (EQ, GE, LE, LT, GT)
 6. Loops (For and While)
@@ -33,14 +34,20 @@ a = scanf();
 ```
 
 ### print
-```c
+```c 
 printf(a);
 
 ```
 
 ### single line comment
 ```c
-/* this is a comment */
+// this is a comment
+
+```
+
+### arrays
+```c
+drgndf
 
 ```
 
@@ -53,8 +60,6 @@ else{
     n=0;
 }
 
-// note : var1 and var must be variables.
-
 ```
 
 ### while
@@ -66,38 +71,37 @@ while(m<n){
     fnext=temp+fnext;
     m=m+1;
 }
-// note : m and n must be variables.
 
 ```
 
 ### for
 ```c
-k=100;
-for (i=0; i<k; i=i+1){
-    a=a+1;
+for (var; upper_bound; increment)  // for now
+for (i; i<upper; i=i+1){
 }
-// note : k must be a variables.
+// note - upper must be a register.
 ```
 
-### function defination
-```c
-def addfun(a, b){
-    s=a+k;
-    return s;
-}
-
-/* note : a and b must be variables
-        : function defination must be at the end of program
-*/
-```
-
-### function call
+### function
 ```py
-c=addfun(a,b);
+# tentetive
+def functionName(i, j, k){
+        stmts
+}
+
+def name(a){
+    return a+1;
+}
+
+
+funcStmt: DEF VAR '(' parameters  ')' '{'  stmts  '}'
+paramters: VAR parameters
+         | VAR
+         |  /* void */
 ```
 
 ## Contributors
-- <a href = "https://github.com/ac-optimus">Abhavya Chandra (16110001)</a>
-- <a href = "https://github.com/sgdesh">Shubham Deshpande (16110050)</a>
+- <a href = "https://github.com/ac-optimus">Abhavya Chandra ()</a> 
+- <a href = "https://github.com/sgdesh">Shubham Deshpande ()</a>
 - <a href = "https://github.com/vandanpatel105">Vandan Patel (17110105)</a>
 - <a href = "https://github.com/kanishkkalra11">Kanishk Kalra (17110067)</a>

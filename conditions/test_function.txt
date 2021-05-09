@@ -1,0 +1,6 @@
+p=10;
+
+def name(a, b){
+    a=b+p;
+    return a;
+}
