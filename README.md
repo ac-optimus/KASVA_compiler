@@ -5,7 +5,7 @@ In this project, we write a compiler having features and syntax as mentioned bel
 ## How to build?
 1. Open terminal in root folder in the reporsitory.
 2. Run `$make`
-3. Some test files are available in the folder `conditions`. To test on `filename.ksva`, run `$./KASVA < tests/filname.kasva`
+3. Some test files are available in the folder `tests`. To test on `filename.ksva`, run `$./KASVA < tests/filname.kasva`
 4. Open `asmb.asm` file in Mars. Assemble and Run.
 
 ## Features included
