@@ -1,0 +1,22 @@
+a=5;
+b=10;
+c=100;
+
+d=15;
+
+c=addfun(a,b);
+printf(c);
+
+if (c== d){
+    c = 50;
+}
+else{
+    c=25;
+}
+
+def addfun(a, b){
+    k=scanf();
+    s=a+k;
+    return s;
+}
+
