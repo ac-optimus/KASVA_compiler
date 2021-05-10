@@ -108,7 +108,6 @@ inputStmt: VAR ASSIGN SCAN '(' ')' ';'
                 // input
                 $$=(struct StmtNode*)malloc(sizeof(struct StmtNode));
                 $$->stmntType=0;
-        	$$=(struct StmtNode*) malloc(sizeof(struct StmtNode));
 	        sprintf($$->assignCode, "li $v0, 5\nsyscall\n move $t%d, $v0\nsw $t%d %s($t8) \n",
                                                 count, count, $1->addr);
         }
